@@ -1,0 +1,24 @@
+####################################################################################################
+
+def MetadataObjectForURL(url):
+  return URLService.MetadataObjectForURL(url)
+
+####################################################################################################
+
+def MediaObjectsForURL(url):
+  return [MediaObject(container = Container.MP4, video_codec = VideoCodec.H264, audio_codec = AudioCodec.AAC,video_resolution = "sd",
+      optimized_for_streaming = True,
+      audio_channels = 2,                                                  
+      parts = [PartObject(key=Callback(PlayVideo, url = url))]
+    )
+  ]                                                                      
+
+VIER_VIDEO_STREAMING_URL = 'http://streaming.sbsbelgium.be/%s.mp4'       
+
+def PlayVideo(url):
+  # Request the URL
+  html = HTML.ElementFromURL(url)
+  #head = HTML.StringFromElement(html[0]).split('":"')
+  src = html.xpath(".//source")[0].get('src')
+  video_url = VIER_VIDEO_STREAMING_URL % src
+  return Redirect(video_url)
