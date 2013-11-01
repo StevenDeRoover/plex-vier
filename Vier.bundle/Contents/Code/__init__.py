@@ -39,6 +39,7 @@ def MainMenu():
   )                                 
   # append programs list directly
   oc = GetProgramList(url="programmas", oc=oc)
+  oc = GetProgramList(url="programmas/categorieen/sport", oc=oc)
   return oc
 
 ####################################################################################################
@@ -49,11 +50,13 @@ def GetProgramList(url, oc):
   html = HTML.ElementFromURL(VIER_URL + url)
   programs = html.xpath('.//div[contains(@class, "node-programma")]')
   for program in programs:
-    program_url = program.xpath(".//a")[1].get("href").split('/')[2].replace('-', '')
+    program_url = program.xpath(".//a")[1].get("href").split('/')[1].replace('-', '')
+    if program_url == "tnogver":
+      program_url = "istnogver" 
     Log.Info(program_url)
     title = program.xpath(".//a")[1].text
     Log.Info(title)
-    img = program.xpath(".//img")[0].get("src")
+    img = program.xpath(".//img")[0].get("pagespeed_lazy_src")
     Log.Info(img)
     do = DirectoryObject(key = Callback(GetItemList, url=program_url, title2=title), title = title, thumb=img, art=Resource.ContentsOfURLWithFallback(VIER_BACKGROUND_URL % (program_url, program_url), fallback=R(ART)))
     oc.add(do)
@@ -71,9 +74,9 @@ def GetItemList(url, title2, page=''):
   for video in videos:
     Log.Info("video:")
     try:
-      video_page_url = "http://www.vier.be" + video.xpath(".//a")[0].get("href")
+      video_page_url = VIER_PROGRAMMA_VIDEO_URL % (url, video.xpath(".//a")[0].get("href"))
       title = video.xpath(".//a")[1].text
-      img = video.xpath(".//img")[0].get("src")
+      img = video.xpath(".//img")[0].get("pagespeed_lazy_src")
       sort = video_page_url.split('/')[-1] 
       Log.Info(video_page_url)
       try:
