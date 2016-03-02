@@ -1,24 +1,65 @@
+VIER_VIDEO_STREAMING_URL = 'http://vod.streamcloud.be/%s/mp4:_definst_/%s.mp4/playlist.m3u8'
+
+####################################################################################################
+def NormalizeURL(url):
+
+    if '#' in url and '|' in url and not '?' in url:
+        return url
+
+    return url.split('#')[0].split('?')[0]
+
 ####################################################################################################
 
 def MetadataObjectForURL(url):
-  return URLService.MetadataObjectForURL(url)
+
+    # Request the URL
+    html = HTML.ElementFromURL(url)
+
+    if len(html.xpath("//head//meta[@property='og:title']")) < 1:
+        raise Ex.MediaNotAvailable
+
+    try:
+        title = html.xpath("//head//meta[@property='og:title']")[0].get('content')
+        description = html.xpath("//head//meta[@name='description']")[0].get('content')
+        thumb = html.xpath("//head//meta[@property='og:image']")[0].get('content')
+#        date = html.xpath("//div[@class='ds-left']//div[contains(@class, 'field-name-post-date')]")[0].text
+#        originally_available_at = Datetime.ParseDate(date).date()
+    except:
+        raise Ex.MediaNotAvailable
+
+    return VideoClipObject(
+        title = title,
+        summary = description,
+        thumb = thumb,
+#        originally_available_at = originally_available_at
+    )
 
 ####################################################################################################
 
 def MediaObjectsForURL(url):
-  return [MediaObject(container = Container.MP4, video_codec = VideoCodec.H264, audio_codec = AudioCodec.AAC,video_resolution = "sd",
-      optimized_for_streaming = True,
-      audio_channels = 2,                                                  
-      parts = [PartObject(key=Callback(PlayVideo, url = url))]
-    )
-  ]                                                                      
+    return [
+        MediaObject(
+            optimized_for_streaming = True,
+            audio_channels = 2,
+            video_resolution = 'sd',
+            parts = [
+                PartObject(
+                    key = HTTPLiveStreamURL(Callback(PlayVideo, url=url))
+                )
+            ]
+        )
+    ]
 
-VIER_VIDEO_STREAMING_URL = 'http://streaming.sbsbelgium.be/%s.mp4'       
+####################################################################################################
+@indirect
+def PlayVideo(url, **kwargs):
 
-def PlayVideo(url):
-  # Request the URL
-  html = HTML.ElementFromURL(url)
-  #head = HTML.StringFromElement(html[0]).split('":"')
-  src = html.xpath(".//source")[0].get('src')
-  video_url = VIER_VIDEO_STREAMING_URL % src
-  return Redirect(video_url)
+    # Request the URL
+    html = HTML.ElementFromURL(url)
+
+    filename = html.xpath('.//div[contains(@class, "field-name-field-video-path")]//div')[1].get('data-filename')
+    application = html.xpath('.//div[contains(@class, "field-name-field-video-path")]//div')[1].get('data-application')
+    video_url = VIER_VIDEO_STREAMING_URL % (application, filename)
+    Log.Info(video_url)
+
+    return IndirectResponse(VideoClipObject, key=HTTPLiveStreamURL(video_url))
