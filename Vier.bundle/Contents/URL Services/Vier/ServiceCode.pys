@@ -1,4 +1,5 @@
 VIER_VIDEO_STREAMING_URL = 'http://vod.streamcloud.be/%s/mp4:_definst_/%s.mp4/playlist.m3u8'
+VIER_URL = "http://www.vier.be"
 
 ####################################################################################################
 def NormalizeURL(url):
@@ -51,14 +52,51 @@ def MediaObjectsForURL(url):
     ]
 
 ####################################################################################################
+
+def Login(html):
+    if(html.xpath('count(.//form[contains(@id, "user-login-form")])') != 0):
+	  Log("Should log in")
+          loginform = html.xpath('.//form[contains(@id, "user-login-form")]')[0]
+	  # get canonical first
+          canonical = html.xpath("//head//link[@rel='canonical']")[0].get('href')          
+          inputs = loginform.xpath(".//input")
+          logindata = {}
+          logindata["name"] = "stevenderoover@gmail.com"
+          logindata["pass"]= "plugintest"
+          for inputt in inputs:
+            inputname = inputt.xpath("@name")[0]
+            Log(inputname)
+            if(inputname != "name" and inputname != "pass"):
+              inputvalue = inputt.xpath("@value")[0]
+              logindata[inputname] = inputvalue
+
+          r = HTTP.Request(VIER_URL + "/user?destination=" + canonical, logindata, cacheTime=0)
+	  return HTML.ElementFromString(r.content)
+    else:
+	  Log("Should not log in")
+          return html
+
 @indirect
 def PlayVideo(url, **kwargs):
-
+    Log("Playing video from page: " + url)
     # Request the URL
-    html = HTML.ElementFromURL(url)
+
+    r = HTTP.Request(url)
+
+    html = HTML.ElementFromString(r.content)
+    html = Login(html)
 
     filename = html.xpath('.//div[contains(@class, "field-name-field-video-path")]//div')[1].get('data-filename')
+    if (filename == None):
+        divsearch = './/div[starts-with(@class, "video_player_") and contains(@class, "_data")]'
+	divsearch = "//*[@data-filename]"
+	Log(divsearch)
+        div = html.xpath(divsearch)
+	Log("div" + str(len(div)))
+	filename = html.xpath(divsearch)[0].get("data-filename")
     application = html.xpath('.//div[contains(@class, "field-name-field-video-path")]//div')[1].get('data-application')
+    if (application == None):
+	application = html.xpath('.//div[starts_with(@class, "video_player_") and contains("_data")]')[0].get('data-application')
     video_url = VIER_VIDEO_STREAMING_URL % (application, filename)
     Log.Info(video_url)
 
