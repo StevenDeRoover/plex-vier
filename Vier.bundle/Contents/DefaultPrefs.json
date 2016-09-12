@@ -1,0 +1,15 @@
+[
+{
+"id": "vierusername",
+"type": "text",
+"label": "Username",
+"default": ""
+},
+{
+"id": "vierpassword",
+"type": "text",
+"label": "Password",
+"default": "",
+"option": "hidden"
+}
+]
