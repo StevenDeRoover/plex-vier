@@ -1,13 +1,12 @@
 VIER_VIDEO_STREAMING_URL = 'http://vod.streamcloud.be/%s/mp4:_definst_/%s.mp4/playlist.m3u8'
-VIER_URL = "http://www.vier.be"
-
+VIER_URL = 'http://www.vier.be'
 ####################################################################################################
 def NormalizeURL(url):
 
-    if '#' in url and '|' in url and not '?' in url:
+   Log('Normalizing URL ' + url)
+   if '#' in url and '|' in url and not '?' in url:
         return url
-
-    return url.split('#')[0].split('?')[0]
+   return url.split('#')[0].split('?')[0]
 
 ####################################################################################################
 
@@ -61,8 +60,8 @@ def Login(html):
           canonical = html.xpath("//head//link[@rel='canonical']")[0].get('href')          
           inputs = loginform.xpath(".//input")
           logindata = {}
-          logindata["name"] = "stevenderoover@gmail.com"
-          logindata["pass"]= "plugintest"
+          logindata["name"] = "USERNAME"
+          logindata["pass"]= "PASSWORD"
           for inputt in inputs:
             inputname = inputt.xpath("@name")[0]
             Log(inputname)
@@ -101,3 +100,4 @@ def PlayVideo(url, **kwargs):
     Log.Info(video_url)
 
     return IndirectResponse(VideoClipObject, key=HTTPLiveStreamURL(video_url))
+
