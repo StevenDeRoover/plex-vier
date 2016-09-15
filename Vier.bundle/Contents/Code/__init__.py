@@ -1,13 +1,14 @@
-import re, string
+import re, string, types
 
 VIER_URL = 'http://www.vier.be'
+VIER_VIDEO_STREAMING_URL = 'http://vod.streamcloud.be/%s/mp4:_definst_/%s.mp4/playlist.m3u8'
 
 ICON = 'vier_logo.png'
 ART = 'art-default.png'
 
+
 ####################################################################################################
 def Start():
-
   Plugin.AddPrefixHandler('/video/vier', MainMenu, 'Vier', ICON, ART)
   Plugin.AddViewGroup('InfoList', viewMode='InfoList', mediaType='items')
   ObjectContainer.title1 = 'Vier'
@@ -22,7 +23,7 @@ def Start():
 def MainMenu():
 
   oc = ObjectContainer()
-
+  oc.add(PrefsObject(title=L('Preferences')))
   # append programs list directly
   oc = GetProgramList(url="/programmas", oc=oc)
   oc = GetProgramList(url="/programmas/categorieen/sport", oc=oc)
@@ -39,11 +40,18 @@ def GetProgramList(url, oc):
         program_url = program.xpath(".//a")[0].get("href")
         Log.Info(program_url)
         title = program.xpath('.//h3')[0].text
+        programid = ''
+        Log('Getting program ID from classes:' + program.xpath("@class")[0])
+        classes = program.xpath('@class')[0].split(' ')
+        for clss in classes:
+            if clss != 'node-programma' and clss.startswith('node-'):
+              programid=clss.replace('node-', '')
+              Log('Program ID for ' + title + ':' + programid)
         Log.Info(title)
         img = program.xpath(".//img")[0].get("src")
         Log.Info(img)
         do = DirectoryObject(
-            key = Callback(GetItemList, url=program_url, title=title),
+            key = Callback(GetItemList, url=program_url, title=title, programid=programid),
             title = title,
             thumb = img,
 #            art = Resource.ContentsOfURLWithFallback(VIER_BACKGROUND_URL % (program_url, program_url), fallback=R(ART))
@@ -52,7 +60,7 @@ def GetProgramList(url, oc):
 
     return oc
 
-def GetItemList(url, title):
+def GetItemList(url, title, programid):
 
     cookies = HTTP.CookiesForURL(VIER_URL)
     oc = ObjectContainer(title1=title, view_group='InfoList', http_cookies=cookies)
@@ -70,7 +78,10 @@ def GetItemList(url, title):
             video_page_url = VIER_URL + video.xpath(".//a")[0].get("href")
             title = video.xpath(".//h3//a")[0].text
             img = video.xpath(".//img")[0].get("src")
-            Log.Info(video_page_url)
+
+	    video_page_url = video_page_url + "#" + Prefs["vierusername"] + "," + Prefs["vierpassword"]
+
+	    Log(video_page_url)
 
             oc.add(
                 VideoClipObject(
@@ -93,3 +104,4 @@ def GetItemList(url, title):
 #        oc.add(DirectoryObject(key=Callback(GetItemList, url=url, page='?'+page_url, title2='Volgende...'), title   = L('Volgende...')))
 
     return oc
+
