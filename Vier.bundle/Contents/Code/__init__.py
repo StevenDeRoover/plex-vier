@@ -79,7 +79,7 @@ def GetItemList(url, title, programid):
             title = video.xpath(".//h3//a")[0].text
             img = video.xpath(".//img")[0].get("src")
 
-	    video_page_url = video_page_url + "#" + Prefs["vierusername"] + "," + Prefs["vierpassword"]
+	    video_page_url = video_page_url
 
 	    Log(video_page_url)
 
